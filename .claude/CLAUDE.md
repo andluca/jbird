@@ -76,4 +76,6 @@ docs/
 
 ## Ciclo
 
-`/spec` → `/break` → `/plan` → `/execute` → `code-review-partner`. Atalho `/run` = plan+execute. `/onboarding` para devs novos. `/explore` (subagent) para investigar codigo sem alterar.
+`/spec` → `/break` → `/plan` → `/execute`. Atalho `/run` = plan+execute. `/onboarding` para devs novos. `/explore` (subagent) para investigar codigo sem alterar.
+
+`/plan` dispatcha o subagent `planner` (Opus, planeja sem implementar). `/execute` dispatcha `executor` (Sonnet, TDD + gates + dispatcha `code-review-partner`). `/run` faz os dois em sequencia. Commands sao thin wrappers — toda a logica vive no subagent.

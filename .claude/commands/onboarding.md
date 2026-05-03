@@ -15,7 +15,7 @@ Guiar dev novo no jbird (CLI pessoal Bun + TS que estende Claude Code).
    - **Projeto:** estende capacidade da janela de 5h do Claude Max — nao reduz custo por token. Peer ao Claude Code, nunca host. OAuth pass-through.
    - **Arquitetura hibrida:** multi-command CLI three-layer + plugin bundle declarativo + daemon proxy local.
    - **Quatro packages:** `@jbird/core` (types/schemas dependency-free), `@jbird/cli` (binario), `@jbird/proxy` (Hono :7878), `@jbird/bundle` (skills/hooks/sub-agents/MCPs/regra).
-   - **Workflow:** `/spec` → `/break` → `/plan` → `/execute` (com `code-review-partner`). Atalho `/run`. Status em `docs/issues/status.md`. TDD obrigatorio.
+   - **Workflow:** `/spec` → `/break` → `/plan` (subagent `planner`, Opus) → `/execute` (subagent `executor`, Sonnet, dispatcha `code-review-partner`). Atalho `/run` = planner + executor em sequencia. Status em `docs/issues/status.md`. TDD obrigatorio.
    - **Comandos do produto:** `jbird init` (adopt/generate), `jbird tdd`, `jbird audit`, `jbird refactor`. Admin: `services`, `plugins`, `stats`, `config`.
    - **Sub-agentes do bundle:** cavecrew (investigator/builder/reviewer) + tdd (test-writer/refactorer) + project-architect + audit-reporter (quality/security/architecture) + refactor-verifier.
    - **Convencoes:** `bun:test` apenas, Zod pra schemas, Hono pro proxy, Commander pro CLI, ports na fronteira, sem static methods, sem `any`, sem `console.log`, ESM only.

@@ -1,5 +1,5 @@
 ---
-description: Planejar e executar uma issue em sequencia (/plan + /execute)
+description: Plan + execute em sequencia (Opus planeja, Sonnet executa)
 argument-hint: @docs/issues/{issue-file}.md
 ---
 
@@ -7,11 +7,11 @@ argument-hint: @docs/issues/{issue-file}.md
 
 Instructions: $ARGUMENTS
 
-Rodar `/plan` e `/execute` em sequencia, sem pausa entre as duas fases.
+Dispatchar `planner` (Opus) e depois `executor` (Sonnet) em sequencia, sem pausa entre as duas fases.
 
-1. Executar `/plan` com `$ARGUMENTS` ate o final (issue atualizada com plano, marcada `planned`).
-2. Executar `/execute` com `$ARGUMENTS` ate o final (TDD, gates, code-review-partner, marcada `completed`).
+1. Agent tool com `subagent_type: planner` — passar caminho da issue. Esperar retorno.
+2. Se planner retornar `blocked` ou flagar decisao nao-obvia, **abortar antes do execute** e reportar pro user.
+3. Agent tool com `subagent_type: executor` — passar caminho da issue. Esperar retorno.
+4. Sumarizar saida final pro user: o que foi planejado, o que foi entregue, gates verdes, status do commit staged.
 
-Use quando a issue e clara o suficiente que voce nao precisa pausar pra revisar o plano antes de implementar. Caso contrario, rode `/plan` e `/execute` separadamente.
-
-Se durante o `/plan` aparecer decisao nao-obvia ou a issue revelar que precisa ser quebrada, **abortar antes do `/execute`** e reportar ao user.
+Use quando a issue e clara o suficiente que voce nao precisa pausar pra revisar o plano. Caso contrario, rode `/plan` e `/execute` separadamente.
