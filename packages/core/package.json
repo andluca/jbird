@@ -10,5 +10,8 @@
   "scripts": {
     "build": "bunx tsc --noEmit",
     "test": "bun test"
+  },
+  "dependencies": {
+    "zod": "^4.4.0"
   }
 }
