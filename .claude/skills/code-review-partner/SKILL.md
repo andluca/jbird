@@ -1,32 +1,28 @@
 ---
 name: code-review-partner
-description: Revisa codigo do monorepo jbird (Bun + TS 7.0, three-layer Command → Operation → Service → Infrastructure, four packages, Hono proxy, Zod schemas, bun:test) contra arquitetura do projeto, dominio e qualidade geral. Trigger apos qualquer geracao de codigo. Reportar findings, nao auto-fix.
+description: Revisa codigo do monorepo jbird (Bun + TS 7.0, three-layer Command → Operation → Service → Infrastructure, four packages, Hono proxy, Zod schemas, bun:test) contra arquitetura, dominio e qualidade. Trigger apos qualquer geracao de codigo. Reportar findings, nao auto-fix.
 ---
 
 # Code Review — jbird
 
-Reviewer pragmatico. Layer/contract violations sao firmes; estilo e judgment call. Reportar findings, deixar humano decidir prioridade. Reportar tambem trade-offs razoaveis em vez de flagar como issue.
+Reviewer pragmatico. Layer/contract violations sao firmes; estilo e judgment call. Reportar com path:line e principio violado. Reconhecer trade-off razoavel quando existe.
 
-## Stack
+Stack: Bun, TS 7.0 strict, four packages (`@jbird/core`, `@jbird/cli`, `@jbird/proxy`, `@jbird/bundle`), Hono, Commander, Zod, ESM only. Skills relacionadas: `jbird-discipline` (camadas/naming), `jbird-domain` (gotchas), `tdd` (anti-patterns de teste). Rules: `.claude/rules/typescript-coding-style.md`.
 
-Bun, TS 7.0 strict (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`), four packages (`@jbird/core`, `@jbird/cli`, `@jbird/proxy`, `@jbird/bundle`), Hono, Commander, Zod, ESM only. Three-layer dentro do CLI: Command → Operation → Service → Infrastructure. Reference: `webdev-bench/docs/terminal/architecture.md`.
+## 1. Camadas (CLI)
 
-## Checklist por area
+Imports descendentes only: Command → Operation → Service → Infrastructure.
 
-### 1. Camadas (CLI)
+- Command: parseia argv via Commander, delega pra Operation. Nao toca Service/Infrastructure direto.
+- Operation: orquestra Services + Infrastructure via ports. Nao parseia argv, nao toca FS, nao executa shell direto.
+- Service (`shared/services/`): logica complexa, ports no constructor. Nao importa Command/Operation, nao escreve em stdout.
+- Infrastructure (`shared/models/`, `shared/integrations/`): I/O concreto. Sem business logic.
 
-Imports sao descendentes only.
-
-- Command (`commands/{cmd}/{cmd}.ts`): so parseia args via Commander e delega pra Operation. Nao importa Service/Infrastructure direto.
-- Operation (`commands/{cmd}/{op}/{op}.ts`): recebe typed data, orquestra Services e Infrastructure via ports. Nao parseia argv, nao toca FS direto, nao executa shell direto.
-- Service (`shared/services/`): logica complexa, ports no constructor. Nao importa Command/Operation, nao escreve no stdout.
-- Infrastructure (`shared/models/`, `shared/integrations/`): I/O concreto. Nao contem business logic.
-
-Sharing hierarchy: operation-level (default) → command-level (`commands/{cmd}/shared/`) quando 2+ operations reusam → global (`shared/`) quando 2+ commands reusam.
+Sharing: operation-level (default) → command-level (`commands/{cmd}/shared/`) com 2+ uso → global (`shared/`) com 2+ commands reusando.
 
 <flag severity="critical">
 - Command importando Service ou Infrastructure direto
-- Operation chamando `Bun.spawn`, `Bun.file`, `Bun.write` sem passar por integration
+- Operation chamando `Bun.spawn`/`Bun.file`/`Bun.write` sem integration
 - Service importando `commands/...`
 - Infrastructure com if/else de business logic
 </flag>
@@ -34,17 +30,17 @@ Sharing hierarchy: operation-level (default) → command-level (`commands/{cmd}/
 <flag severity="warning">
 - Operation > 200 LOC sem extracao pra Service
 - Service > 150 LOC sem decomposicao
-- Helper promovido pra `shared/` antes de ter 2+ uso
+- Helper promovido pra `shared/` antes de 2+ uso
 </flag>
 
-### 2. Cross-package imports
+## 2. Cross-package imports
 
 | De / Para | core | bundle | proxy | cli |
-|-----------|------|--------|-------|-----|
-| core      | yes  | no     | no    | no  |
-| bundle    | yes  | yes    | no    | no  |
-| proxy     | yes  | no     | yes   | no  |
-| cli       | yes  | yes    | yes   | yes |
+|---|---|---|---|---|
+| core    | yes | no  | no  | no  |
+| bundle  | yes | yes | no  | no  |
+| proxy   | yes | no  | yes | no  |
+| cli     | yes | yes | yes | yes |
 
 <flag severity="critical">
 - `@jbird/core` importando outro package
@@ -52,21 +48,21 @@ Sharing hierarchy: operation-level (default) → command-level (`commands/{cmd}/
 - `@jbird/proxy` importando `@jbird/cli`
 </flag>
 
-### 3. Schemas
+## 3. Schemas
 
 Todo dado que cruza fronteira (config TOML, IPC, journal NDJSON, bundle manifest, sub-agent payload) tem schema Zod em `@jbird/core/schemas` e e validado nas duas pontas.
 
 <flag severity="critical">
 - IPC handler aceitando body sem `schema.parse()`
-- Config sendo lida sem validacao Zod
+- Config lida sem validacao Zod
 </flag>
 
 <flag severity="warning">
-- Tipo definido como `interface` duplicando schema Zod existente (use `z.infer<typeof xSchema>`)
+- `interface` duplicando schema Zod existente (use `z.infer<typeof xSchema>`)
 - Schema sem round-trip test
 </flag>
 
-### 4. Routing proxy
+## 4. Routing proxy
 
 - `RoutingPolicy.decide()` puro: sem FS, sem HTTP, sem clock, sem random. Property test obrigatorio.
 - OAuth `Authorization` header forwardado sem tocar (sem ler, sem logar, sem copiar).
@@ -85,7 +81,7 @@ Todo dado que cruza fronteira (config TOML, IPC, journal NDJSON, bundle manifest
 - Sequential Thinking injetada em rota Opus (waste)
 </flag>
 
-### 5. Bundle materialization
+## 5. Bundle materialization
 
 - `BundleMaterializer.materialize()` idempotente via content hash.
 - Nunca deletar fora de `.jbird-managed` manifest.
@@ -93,16 +89,16 @@ Todo dado que cruza fronteira (config TOML, IPC, journal NDJSON, bundle manifest
 
 <flag severity="critical">
 - Materialize sem content-hash skip
-- `fs.unlink` em path nao listado no `.jbird-managed`
+- `fs.unlink` em path nao listado em `.jbird-managed`
 - Hardcoded path fora de `~/.claude/` ou `.claude/`
 </flag>
 
-### 6. Service lifecycle
+## 6. Service lifecycle
 
 - `Bun.spawn({ detached: true, stdio: 'ignore' })`.
 - Info file em `~/.jbird/services/proxy.info`.
 - Health polling apos spawn antes de retornar.
-- Signal 0 pra existence check; SIGTERM 5s timeout; SIGKILL fallback.
+- Signal 0 pra existence; SIGTERM 5s timeout; SIGKILL fallback.
 - Orphan info file → cleanup + restart na proxima invocacao.
 - Sem auto-restart em v1.
 
@@ -116,10 +112,10 @@ Todo dado que cruza fronteira (config TOML, IPC, journal NDJSON, bundle manifest
 - Falta cleanup de orphan info file
 </flag>
 
-### 7. Caveman boundary
+## 7. Caveman boundary
 
 - Sub-agent definitions tem diretivas caveman.
-- Final user-facing response e prosa cheia (skill `bundle/skills/jbird/final-response.md`).
+- Final user-facing response e prosa cheia (`bundle/skills/jbird/final-response.md`).
 - Security warnings e destructive ops exempt em qualquer direcao.
 
 <flag severity="critical">
@@ -128,52 +124,77 @@ Todo dado que cruza fronteira (config TOML, IPC, journal NDJSON, bundle manifest
 - Compressao aplicada a security warning
 </flag>
 
-### 8. TDD
+## 8. TDD
 
-- `bun:test` apenas. Sem Vitest, sem Jest.
-- Unit `.test.ts` co-located. Spec `.spec.ts` em `tests/` per-operation, usando `runCli()`.
-- Mock no nivel da port (FS, HTTP, child-process), nao logica interna do service.
-- Assertions sao comportamentais (retorno, excecao, estado observavel), nao sequencia de chamadas internas.
+Behavior over implementation. Mocks na fronteira da port. Anti-patterns proibidos: ver skill `tdd` (toBeDefined em export, type-smoke, instanceof spam, etc).
 
 <flag severity="critical">
 - Production code novo sem teste
-- Import de `vitest` ou `jest`, ou uso de `vi.fn()` / `jest.fn()`
-- Teste afirmando ordem de chamadas internas (`toHaveBeenCalledBefore`, ordem em `mock.calls`)
-- TDD test-writer e builder fundidos no mesmo sub-agent (quebra invariante)
+- Import de `vitest`/`jest` ou `vi.fn()`/`jest.fn()`
+- Teste afirmando ordem de chamadas internas
+- Implementation test (qualquer anti-pattern listado em `tdd`)
+- TDD test-writer e builder fundidos no mesmo sub-agent
 - Refactor command commitando ou force-pushando
 </flag>
 
 <flag severity="warning">
-- Spec test que nao usa `runCli()` (chama `Bun.spawn` direto)
-- Mock no nivel errado
-- Property test ausente em funcao pura central (`RoutingPolicy.decide`, schemas Zod)
+- Spec sem `runCli()` (chama `Bun.spawn` direto)
+- Property test ausente em funcao pura central
 </flag>
 
-### 9. Tamanho e nesting
+## 9. Limites de tamanho
 
-- Funcao max 60 LOC. Nesting max 2 niveis.
-- Cyclomatic baixa. Max 3 params; alem disso usar options object.
+Numeros sao limites duros, nao alvos. Acima disso, decompor.
 
-### 10. Clean code
+- Funcao: max **60 LOC**. Acima → extrair helper ou Service.
+- Nesting: max **2 niveis**. Acima → early return, extracao de funcao, ou guard clauses.
+- Params: max **3**. Acima → options object (`{ name, version, profile }`).
+- Cyclomatic baixa — sem if/else aninhados em arvore, sem switch gigante (usar discriminated union + map).
+
+<flag severity="critical">
+- Funcao > 60 LOC sem justificativa documentada
+- Nesting > 2 niveis sem early return
+</flag>
+
+## 10. SOLID
+
+- **SRP** — uma classe/funcao = uma razao pra mudar. Service que parseia config E fala com API = duas responsabilidades.
+- **OCP** — extensiveis via union/discriminated union; novo caso = novo branch, nao alterar codigo existente.
+- **LSP** — subclasses substituiveis pelo base sem surpresa (ex: subclasses de `JbirdError` mantem `toJSON()` shape).
+- **ISP** — interfaces enxutas. Port com 12 metodos onde consumer usa 2 = split.
+- **DIP** — depender de abstracao (port no constructor), nao de implementacao concreta. `@jbird/core` nao depende de outro package.
+
+<flag severity="critical">
+- Service depende de classe concreta de Infrastructure em vez de port
+- `@jbird/core` importando outro package (DIP violado)
+</flag>
+
+<flag severity="warning">
+- Service com >1 razao pra mudar (SRP)
+- Port com metodos que consumers nao usam (ISP)
+- `if (kind === 'a') { ... } else if (kind === 'b') { ... }` quando discriminated union resolveria
+</flag>
+
+## 11. Clean code
 
 - Nomes revelam intencao. Booleans com `is`/`has`/`can`/`should`.
-- Magic values viram constants nomeadas (`7878`, `5000`, `500`).
+- Magic values viram constants nomeadas (`7878` → `DEFAULT_PROXY_PORT`, `5000` → `HEALTH_TIMEOUT_MS`).
 - Loop semantico: `map`/`filter`/`find`/`some`/`every`/`reduce`/`for...of` em vez de `for(let i=...)`.
-- Sem dead code.
-
-### 11. TypeScript
-
-- Sem `any` (use `unknown` + narrow). Sem non-null `!` salvo caso documentado.
-- Sem `console.log` (use `Logger` de `@jbird/core`).
-- `const` > `let`, `===` sempre, `?.`/`??` > checks manuais, `async/await` > `.then()`, type guards > `as`.
-- Public API exportada com tipos explicitos. Locals podem inferir.
-- `interface` pra shapes extendiveis. `type` pra unions/intersections/mapped/utility.
-- String literal unions > `enum`.
+- Sem `any`, sem `console.log`, sem dead code.
+- Constructor injection. Funcao exportada > static method.
 
 <flag severity="critical">
 - `any` introduzido em production
-- `console.log` em production
+- `console.log` em production (use `Logger` de `@jbird/core`)
 - Static method em classe (use funcao exportada)
+- Magic value duplicado em 2+ lugares sem constant
+</flag>
+
+<flag severity="warning">
+- Nome generico (`data`, `result`, `info`) sem contexto
+- `for(let i=...)` onde `for...of` ou metodo de array funcionaria
+- Boolean sem prefixo (`active` em vez de `isActive`)
+- Dead code (import nao usado, funcao nao chamada, branch inalcancavel)
 </flag>
 
 ## Report format
@@ -182,10 +203,10 @@ Todo dado que cruza fronteira (config TOML, IPC, journal NDJSON, bundle manifest
 ## Code Review — jbird
 
 ### Resumo
-[uma frase com avaliacao geral]
+[uma frase]
 
 ### Critical
-- [packages/X/src/Y.ts:line] issue → principio violado
+- [path:line] issue → principio violado
 
 ### Warnings
 - [path:line] issue → racional
@@ -194,20 +215,7 @@ Todo dado que cruza fronteira (config TOML, IPC, journal NDJSON, bundle manifest
 - [path:line] observacao opcional
 
 ### Metrics
-- Funcao mais longa: [nome] em [N] linhas
-- Nesting max: [N] niveis em [local]
-- Funcoes > 60 LOC: [count]
-- Layer violations: [count]
-- Cross-package violations: [count]
-- `any` introduzidos: [count]
-- `console.log` introduzidos: [count]
-- Coverage gaps: [lista]
+Funcao mais longa: [N] linhas / Nesting max: [N] / Funcoes > 60 LOC: [count]
+Layer violations: [count] / Cross-package: [count] / `any`: [count] / `console.log`: [count]
+Coverage gaps: [lista]
 ```
-
-## Severity
-
-- **Critical**: bugs, layer/contract violations, schema bypass, routing impurity, materialize nao idempotente, OAuth header lido, static method, `any`/`console.log` novos, sub-agent fundido, refactor command commitando.
-- **Warning**: extracao tardia, schema duplicado como interface, mock no nivel errado, magic value sem constant, helper promovido cedo demais.
-- **Note**: naming, style, refactor opcional.
-
-Reportar com path:line e principio violado. Reconhecer trade-off razoavel quando existe. Nem toda sugestao precisa de acao.
