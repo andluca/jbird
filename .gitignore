@@ -1,0 +1,16 @@
+node_modules/
+dist/
+*.log
+
+# Bun
+bun.lockb
+
+# jbird state (user-local, never committed)
+.jbird/
+
+# Test artifacts
+coverage/
+.nyc_output/
+
+# Tooling caches
+.firecrawl/
