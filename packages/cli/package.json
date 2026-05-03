@@ -1,0 +1,22 @@
+{
+  "name": "@jbird/cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/jbird.ts",
+  "bin": {
+    "jbird": "./src/jbird.ts"
+  },
+  "exports": {
+    ".": "./src/jbird.ts"
+  },
+  "scripts": {
+    "build": "bun build --compile ./src/jbird.ts --outfile dist/jbird",
+    "test": "bun test",
+    "start": "bun run ./src/jbird.ts"
+  },
+  "dependencies": {
+    "@jbird/core": "workspace:*",
+    "commander": "^13.0.0"
+  }
+}
