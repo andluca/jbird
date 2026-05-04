@@ -6,10 +6,17 @@ export interface CliResult {
   readonly exitCode: number;
 }
 
-export async function runCli(args: readonly string[]): Promise<CliResult> {
+export interface RunCliOptions {
+  readonly cwd?: string;
+  readonly env?: NodeJS.ProcessEnv;
+}
+
+export async function runCli(args: readonly string[], opts?: RunCliOptions): Promise<CliResult> {
   const proc = Bun.spawn(["bun", "run", ENTRY, ...args], {
     stdout: "pipe",
     stderr: "pipe",
+    cwd: opts?.cwd ?? process.cwd(),
+    env: opts?.env ?? process.env,
   });
   const [stdout, stderr] = await Promise.all([
     new Response(proc.stdout).text(),

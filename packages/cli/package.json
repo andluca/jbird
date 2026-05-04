@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@jbird/core": "workspace:*",
-    "commander": "^13.0.0"
+    "commander": "^13.0.0",
+    "smol-toml": "^1.6.1"
   }
 }

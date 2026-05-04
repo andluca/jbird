@@ -1,3 +1,6 @@
+// Version constant
+export { JBIRD_VERSION } from "./version.ts";
+
 // Error classes
 export {
   BundleError,

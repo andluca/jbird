@@ -1,11 +1,18 @@
 import { Command } from "commander";
-import type { Stdout } from "../../shared/services/ports.ts";
+import type { Stdout, Editor } from "../../shared/services/ports.ts";
+import type { ConfigLoader } from "../../shared/services/ConfigLoader.ts";
+import type { ConfigWriter } from "../../shared/services/ConfigWriter.ts";
+import type { StateDir } from "../../shared/services/StateDir.ts";
 import { runConfigGet } from "./get/get.ts";
 import { runConfigSet } from "./set/set.ts";
 import { runConfigEdit } from "./edit/edit.ts";
 
 interface CommandDeps {
   readonly stdout: Stdout;
+  readonly configLoader: ConfigLoader;
+  readonly configWriter: ConfigWriter;
+  readonly stateDir: StateDir;
+  readonly editor: Editor;
 }
 
 export function registerConfig(program: Command, deps: CommandDeps): void {
@@ -14,10 +21,9 @@ export function registerConfig(program: Command, deps: CommandDeps): void {
   config
     .command("get")
     .description("Get a configuration value.")
-    .argument("<key>", "dot-notation config key (e.g. proxy.port)")
+    .argument("<key>", "dot-notation config key (e.g. services.proxy.port)")
     .action(async (key: string) => {
       await runConfigGet({ key }, deps);
-      process.exitCode = 2;
     });
 
   config
@@ -25,17 +31,17 @@ export function registerConfig(program: Command, deps: CommandDeps): void {
     .description("Set a configuration value.")
     .argument("<key>", "dot-notation config key")
     .argument("<value>", "value to set")
-    .action(async (key: string, value: string) => {
-      await runConfigSet({ key, value }, deps);
-      process.exitCode = 2;
+    .option("-g, --global", "write to global config instead of project config")
+    .action(async (key: string, value: string, cmdOpts: { global?: boolean }) => {
+      await runConfigSet({ key, value, global: cmdOpts.global ?? false }, deps);
     });
 
   config
     .command("edit")
-    .description("Open the configuration file in $EDITOR.")
-    .action(async () => {
-      await runConfigEdit({}, deps);
-      process.exitCode = 2;
+    .description("Open the configuration file in $VISUAL / $EDITOR / vi.")
+    .option("-g, --global", "edit global config instead of project config")
+    .action(async (cmdOpts: { global?: boolean }) => {
+      await runConfigEdit({ global: cmdOpts.global ?? true }, deps);
     });
 
   program.addCommand(config);

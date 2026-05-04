@@ -1,6 +1,6 @@
 # Status do Projeto
 
-Ultima atualizacao: 2026-05-04T08:30:00-03:00
+Ultima atualizacao: 2026-05-04T03:30:00-03:00
 
 ## Spec
 
@@ -11,7 +11,7 @@ Ultima atualizacao: 2026-05-04T08:30:00-03:00
 - [x] 001-setup-monorepo-skeleton.md - completed
 - [x] 002-implement-core-types-and-schemas.md - completed
 - [x] 003-implement-cli-scaffolding.md - completed
-- [ ] 004-implement-configuration-and-state.md - pending
+- [x] 004-implement-configuration-and-state.md - completed
 - [ ] 005-implement-proxy-passthrough-daemon.md - pending
 - [ ] 006-implement-service-supervision.md - pending
 - [ ] 007-implement-routing-policy-and-providers.md - pending
@@ -26,7 +26,7 @@ Ultima atualizacao: 2026-05-04T08:30:00-03:00
 
 ## Resumo
 
-Total: 15 | Concluidas: 3 | Em andamento: 0 | Planejadas: 0 | Pendentes: 12 | Falharam: 0
+Total: 15 | Concluidas: 4 | Em andamento: 0 | Planejadas: 0 | Pendentes: 11 | Falharam: 0
 
 ## Dependencias
 
@@ -92,6 +92,22 @@ Phases 1-8 (issues 001-008) sao infraestrutura. Phases 9-14 (issues 009-014) sao
   - `eslint.config.mjs` com 2 novos blocos de `no-restricted-imports`: routers nao importam `shared/{services,integrations}/*` (allowTypeImports nas ports); operations nao importam `commander` nem `shared/integrations/*`.
   - Gates: bun test (177 pass, 224 expects), tsc --noEmit (0 erros), bun run lint (0 erros), bun run build (todos packages ok), `./packages/cli/dist/jbird --help` lista os 8 comandos.
   - Code-review-partner: implementation tests detectados pos-execute (8 routers com `toBeDefined` + 13 operations com `resolves without throwing` redundante) e cleanup feito; 1 lint error (`no-unnecessary-type-assertion` em stdout.test.ts) resolvido. 0 criticals remanescentes.
+- 2026-05-03T22:00:00-03:00 — `/plan 004` concluido. Plano detalhado escrito na issue cobrindo: 4 ports novas (`Fs`, `Toml`, `Editor`, `Clock`) + reuse `Logger`; 5 integrations concretas (nodeFs, smol-toml adapter com snake↔camel translation, editor via Bun.spawn TTY-inherit, systemClock, consoleLogger via stderr); 4 services novos (`StateDir` bootstrap 0o700, `ConfigLoader` global+project deep merge, `ConfigWriter` set+chmod 0o600, `JournalWriter` NDJSON append); helpers puros (`deepMerge`, `setAtPath`, `getAtPath`, case translation); operations reescritas substituindo stubs; router ganha `--global` flag em set/edit. Ordem TDD em 7 rounds (helpers → StateDir → ConfigLoader → ConfigWriter → JournalWriter → operations unit → spec E2E). 10 decisoes flagged a alinhar antes de codar (TOML lib, bundle.version default vs required, granularidade do merge, formato `config get`, semantica `set` partial config, `--global` flag scope, file vs dir permissions, editor fallback, comment preservation, journal rotation). Status `planned`.
+- 2026-05-04T03:30:00-03:00 — 004 completed. Entregue:
+  - `packages/core/src/version.ts`: constante `JBIRD_VERSION = "0.0.0"` exportada via barrel `@jbird/core`.
+  - `packages/cli/package.json`: dep `smol-toml` adicionada.
+  - Ports em `shared/services/ports.ts`: `Fs`, `Toml`, `Editor`, `Clock` (+ `Stdout` preexistente).
+  - Integrations: `fs.ts` (Bun.file + node:fs/promises), `toml.ts` (smol-toml + snake↔camel key translation), `editor.ts` ($VISUAL → $EDITOR → vi, Bun.spawn TTY-inherit), `clock.ts` (systemClock), `logger.ts` (consoleLogger via stderr, sem console.log, child() com bindings merge).
+  - Helpers puros em `shared/services/helpers.ts`: `toCamelCase`, `toSnakeCase`, `getAtPath`, `setAtPath` (com coerce string→number/boolean), `deepMerge` (plain objects merge key-by-key, arrays replace). 26 testes.
+  - `StateDir`: ensureGlobal() cria `~/.jbird/{logs,services,cache,stats}/` a 0700; ensureProject() cria `<cwd>/.jbird/` a 0700. 8 testes.
+  - `ConfigLoader`: loadGlobal() (defaults via JBIRD_VERSION quando ausente), loadProject() (partial schema + keepOnlyPresentKeys para nao vazar defaults), load() (deep merge global+project). 11 testes.
+  - `ConfigWriter`: setGlobal/setProject — load base, setAtPath com coerce, validate full schema, write TOML a 0600. 9 testes.
+  - `JournalWriter`: append() — valida via journalEventSchema.parse(), serializa NDJSON, cria dir pai, append-only. 5 testes.
+  - Operations reescritas (stubs substituidos): `runConfigGet` (getAtPath + valueToString), `runConfigSet` (stateDir + configWriter), `runConfigEdit` (stateDir + editor + configLoader validate). Unit tests: 6+5+4 testes. E2E specs: 5+5+3 testes com setupTestRepo() isolando HOME.
+  - Composition root `jbird.ts` instancia todos os services + injeta em deps.
+  - `setupTestRepo()` em `shared/test/`: cria tempdir, overrides HOME/USERPROFILE, retorna cleanup(). Usado nos E2E specs.
+  - Gates: bun test (252 pass), tsc --noEmit (0 erros), bun run lint (0 erros), bun run build (ok), bun test --coverage (services 100%, helpers 100%, operations >=90%).
+  - Code-review-partner: 0 criticals. Warnings: JournalWriter._clock reservado (ISP — documentado, clock presente nos testes); edge de `config edit --global` default=true vs `set` default=false (assimetria intencional, edit abre um arquivo unico); eslint-disable em editor.ts (empty-string env fallback semantica).
 
 ## Notas
 
