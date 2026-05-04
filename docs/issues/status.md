@@ -1,6 +1,6 @@
 # Status do Projeto
 
-Ultima atualizacao: 2026-05-03T19:30:00-03:00
+Ultima atualizacao: 2026-05-04T08:30:00-03:00
 
 ## Spec
 
@@ -10,7 +10,7 @@ Ultima atualizacao: 2026-05-03T19:30:00-03:00
 
 - [x] 001-setup-monorepo-skeleton.md - completed
 - [x] 002-implement-core-types-and-schemas.md - completed
-- [ ] 003-implement-cli-scaffolding.md - pending
+- [x] 003-implement-cli-scaffolding.md - completed
 - [ ] 004-implement-configuration-and-state.md - pending
 - [ ] 005-implement-proxy-passthrough-daemon.md - pending
 - [ ] 006-implement-service-supervision.md - pending
@@ -26,7 +26,7 @@ Ultima atualizacao: 2026-05-03T19:30:00-03:00
 
 ## Resumo
 
-Total: 15 | Concluidas: 2 | Em andamento: 0 | Planejadas: 0 | Pendentes: 13 | Falharam: 0
+Total: 15 | Concluidas: 3 | Em andamento: 0 | Planejadas: 0 | Pendentes: 12 | Falharam: 0
 
 ## Dependencias
 
@@ -78,6 +78,20 @@ Phases 1-8 (issues 001-008) sao infraestrutura. Phases 9-14 (issues 009-014) sao
   - `packages/core/src/index.test.ts`: imports exaustivos de todos schemas e tipos + type assertions em funcao _typeAssertions().
   - Gates: bun test (111 pass), tsc --noEmit (0 erros), bun run lint (0 erros), bun run build (todos packages ok), bun test --coverage (100% lines).
   - Code-review-partner: 0 criticals. Warnings resolvidos: (1) tipos/index.ts unificado para importar de schemas/index barrel (removendo import direto de routing.ts); (2) magic value 7878 extraido para DEFAULT_PROXY_PORT exportado. Follow-up: jbird-discipline skill nao documenta SOLID explicitamente — registrado nas Notas.
+- 2026-05-03T20:15:00-03:00 — `/plan 003` concluido. Plano detalhado escrito na issue cobrindo: composition root em `jbird.ts` (instancia deps, registra 8 comandos), routers thin via `register{Cmd}(program, deps)`, operations stub `run{Op}(opts, deps)` que escrevem "not yet implemented" via port `Stdout`, ~60 novos arquivos (commands/{init/scaffold,init/generate,tdd/run,audit/run,refactor/run,services/{start,stop,status,install,logs},plugins/{sync,list},stats/report,config/{get,set,edit}}). Mode A vs Mode B em operations separadas (`scaffold/` adopt + `generate/` Mode B) — leve desvio nominal da spec, alinha SRP. Lint rule de camada via `no-restricted-imports` built-in (sem `eslint-plugin-boundaries`): routers nao importam `shared/{services,integrations}/*` (allowTypeImports nas ports), operations nao importam `commander` nem `shared/integrations/*`. `runCli` promovido pra `shared/test/cli.ts`; `setupTestRepo` deferred pra 004. Exit code `2` pra placeholders (convencao Unix). Status `planned`.
+- 2026-05-03T21:00:00-03:00 — `/execute 003` iniciado. 4 decisoes confirmadas com user: (1) exit code 2; (2) duas operations init/scaffold + init/generate; (3) lint via `no-restricted-imports` built-in; (4) port `Stdout` minima, Logger fica pra 004. Status `in_progress`.
+- 2026-05-04T08:30:00-03:00 — 003 completed. Entregue:
+  - `packages/cli/src/jbird.ts` rewrite: composition root cria `deps = { stdout: createStdout() }` e registra 8 comandos via `register{Cmd}(program, deps)`.
+  - 8 routers thin (`commands/{init,tdd,audit,refactor,services,plugins,stats,config}/{cmd}.ts`) — cada um registra subcommand + opcoes da spec, delega pra operation.
+  - 13 operations stub (`commands/*/*/{op}.ts`): scaffold, generate, tdd/run, audit/run, refactor/run, services/{start,stop,status,install,logs}, plugins/{sync,list}, stats/report, config/{get,set,edit}. Cada uma com `run{Op}(opts, deps): Promise<void>` + body que escreve "not yet implemented" via `deps.stdout`.
+  - Port `Stdout` em `shared/services/ports.ts` (interface so `write(line)`); impl `createStdout()` em `shared/integrations/stdout.ts` que injeta `\n` se ausente.
+  - `runCli` promovido de inline pra `packages/cli/src/shared/test/cli.ts` + barrel `shared/test/index.ts`.
+  - 13 spec E2E (`commands/*/*/tests/*.spec.ts`): cada operation testa exit code 2 + "not yet implemented" no stdout + `--help` exit 0 com Usage.
+  - 8 router unit tests refatorados pra serem 100% behavioral (so dispatch tests; tests de "registers subcommand" e "has --X option" deletados como implementation tests).
+  - 13 operation unit tests refatorados pra serem 100% behavioral (tests redundantes "resolves without throwing" deletados).
+  - `eslint.config.mjs` com 2 novos blocos de `no-restricted-imports`: routers nao importam `shared/{services,integrations}/*` (allowTypeImports nas ports); operations nao importam `commander` nem `shared/integrations/*`.
+  - Gates: bun test (177 pass, 224 expects), tsc --noEmit (0 erros), bun run lint (0 erros), bun run build (todos packages ok), `./packages/cli/dist/jbird --help` lista os 8 comandos.
+  - Code-review-partner: implementation tests detectados pos-execute (8 routers com `toBeDefined` + 13 operations com `resolves without throwing` redundante) e cleanup feito; 1 lint error (`no-unnecessary-type-assertion` em stdout.test.ts) resolvido. 0 criticals remanescentes.
 
 ## Notas
 

@@ -43,4 +43,58 @@ export default tseslint.config(
     files: ["eslint.config.mjs"],
     extends: [tseslint.configs.disableTypeChecked],
   },
+  // Layer rule: routers (commands/*/*.ts) cannot import services or integrations directly.
+  // The composition root (jbird.ts) builds infrastructure and passes it as deps.
+  {
+    files: ["packages/cli/src/commands/*/*.ts"],
+    ignores: ["packages/cli/src/commands/*/*.test.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["**/shared/services/*"],
+              message:
+                "Routers cannot import services. Pass deps from jbird.ts (composition root) or call the operation, which receives ports.",
+              allowTypeImports: true,
+            },
+            {
+              group: ["**/shared/integrations/*"],
+              message:
+                "Routers cannot import integrations. The composition root (jbird.ts) builds infrastructure and passes it as deps.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  // Layer rule: operations (commands/*/*/*.ts) cannot import commander or integrations directly.
+  // Operations receive parsed options as typed args, not Commander objects.
+  {
+    files: ["packages/cli/src/commands/*/*/*.ts"],
+    ignores: [
+      "packages/cli/src/commands/*/*/*.test.ts",
+      "packages/cli/src/commands/*/*/tests/**",
+    ],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["commander"],
+              message:
+                "Operations receive parsed options as typed args, not Commander objects. Argv parsing belongs to the router.",
+            },
+            {
+              group: ["**/shared/integrations/*"],
+              message:
+                "Operations consume ports (interfaces from shared/services/ports.ts), not concrete integrations. Composition happens in jbird.ts.",
+            },
+          ],
+        },
+      ],
+    },
+  },
 );
