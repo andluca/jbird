@@ -1,5 +1,6 @@
 import type { Command } from "commander";
 import type { Stdout } from "../../shared/services/ports.ts";
+import { STUB_EXIT_CODE } from "../../shared/exit-codes.ts";
 import { runScaffold } from "./scaffold/scaffold.ts";
 import { runGenerate } from "./generate/generate.ts";
 
@@ -34,6 +35,6 @@ export function registerInit(program: Command, deps: CommandDeps): void {
       } else {
         await runScaffold({ path, profile: opts.profile, index: opts.index, shellSetup: opts.shellSetup }, deps);
       }
-      process.exitCode = 2;
+      process.exitCode = STUB_EXIT_CODE;
     });
 }

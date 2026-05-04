@@ -66,7 +66,7 @@ describe("runConfigGet", () => {
     const { stdout, lines } = makeStdout();
     const loader = makeLoader(BASE_CONFIG);
 
-    await runConfigGet({ key: "services.proxy.port" }, { stdout, configLoader: loader, stateDir: makeStateDir() });
+    await runConfigGet({ key: "services.proxy.port", cwd: "/test/project" }, { stdout, configLoader: loader, stateDir: makeStateDir() });
 
     expect(lines.join("")).toBe("7878");
   });
@@ -75,7 +75,7 @@ describe("runConfigGet", () => {
     const { stdout, lines } = makeStdout();
     const loader = makeLoader(BASE_CONFIG);
 
-    await runConfigGet({ key: "services.proxy.autostart" }, { stdout, configLoader: loader, stateDir: makeStateDir() });
+    await runConfigGet({ key: "services.proxy.autostart", cwd: "/test/project" }, { stdout, configLoader: loader, stateDir: makeStateDir() });
 
     expect(lines.join("")).toBe("true");
   });
@@ -84,7 +84,7 @@ describe("runConfigGet", () => {
     const { stdout, lines } = makeStdout();
     const loader = makeLoader(BASE_CONFIG);
 
-    await runConfigGet({ key: "services.proxy" }, { stdout, configLoader: loader, stateDir: makeStateDir() });
+    await runConfigGet({ key: "services.proxy", cwd: "/test/project" }, { stdout, configLoader: loader, stateDir: makeStateDir() });
 
     const parsed = JSON.parse(lines.join("")) as unknown;
     expect(parsed).toEqual({ autostart: true, port: 7878 });
@@ -94,7 +94,7 @@ describe("runConfigGet", () => {
     const { stdout, lines } = makeStdout();
     const loader = makeLoader(BASE_CONFIG);
 
-    await runConfigGet({ key: "routing.rules" }, { stdout, configLoader: loader, stateDir: makeStateDir() });
+    await runConfigGet({ key: "routing.rules", cwd: "/test/project" }, { stdout, configLoader: loader, stateDir: makeStateDir() });
 
     expect(JSON.parse(lines.join(""))).toEqual([]);
   });
@@ -105,7 +105,7 @@ describe("runConfigGet", () => {
     const { messages, restore } = captureStderr();
 
     try {
-      await runConfigGet({ key: "nonexistent.key" }, { stdout, configLoader: loader, stateDir: makeStateDir() });
+      await runConfigGet({ key: "nonexistent.key", cwd: "/test/project" }, { stdout, configLoader: loader, stateDir: makeStateDir() });
     } finally {
       restore();
     }
@@ -123,7 +123,7 @@ describe("runConfigGet", () => {
     const { restore } = captureStderr();
 
     try {
-      await runConfigGet({ key: "services.proxy.port" }, { stdout, configLoader: failingLoader, stateDir: makeStateDir() });
+      await runConfigGet({ key: "services.proxy.port", cwd: "/test/project" }, { stdout, configLoader: failingLoader, stateDir: makeStateDir() });
     } finally {
       restore();
     }

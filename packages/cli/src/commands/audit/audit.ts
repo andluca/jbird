@@ -1,5 +1,6 @@
 import type { Command } from "commander";
 import type { Stdout } from "../../shared/services/ports.ts";
+import { STUB_EXIT_CODE } from "../../shared/exit-codes.ts";
 import { runAudit } from "./run/run.ts";
 
 interface AuditOptions {
@@ -22,6 +23,6 @@ export function registerAudit(program: Command, deps: CommandDeps): void {
     .option("--output <path>", "write report to this file path")
     .action(async (path: string, opts: AuditOptions) => {
       await runAudit({ path, scope: opts.scope, format: opts.format, output: opts.output }, deps);
-      process.exitCode = 2;
+      process.exitCode = STUB_EXIT_CODE;
     });
 }

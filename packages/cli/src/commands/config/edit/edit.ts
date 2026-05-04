@@ -5,6 +5,7 @@ import type { StateDir } from "../../../shared/services/StateDir.ts";
 
 export interface ConfigEditOptions {
   readonly global?: boolean;
+  readonly cwd: string;
 }
 
 export interface ConfigEditDeps {
@@ -18,7 +19,7 @@ export async function runConfigEdit(opts: ConfigEditOptions, deps: ConfigEditDep
   const useGlobal = opts.global !== false;
   const paths = useGlobal
     ? await deps.stateDir.ensureGlobal()
-    : await deps.stateDir.ensureProject(process.cwd());
+    : await deps.stateDir.ensureProject(opts.cwd);
 
   const exitCode = await deps.editor.open(paths.configPath);
 
@@ -32,7 +33,7 @@ export async function runConfigEdit(opts: ConfigEditOptions, deps: ConfigEditDep
     if (useGlobal) {
       await deps.configLoader.loadGlobal();
     } else {
-      await deps.configLoader.load(process.cwd());
+      await deps.configLoader.load(opts.cwd);
     }
     deps.stdout.write("config saved");
   } catch (err) {

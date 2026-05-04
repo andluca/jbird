@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import { coreConfigSchema, ConfigError } from "@jbird/core";
 import type { CoreConfig } from "@jbird/core";
-import { setAtPath } from "./helpers.ts";
+import { setAtPath, deepMerge, getAtPath, coerceValue } from "./helpers.ts";
 import type { ConfigLoader } from "./ConfigLoader.ts";
 import type { StateDir } from "./StateDir.ts";
 import type { Fs, Toml } from "./ports.ts";
@@ -32,7 +32,34 @@ export class ConfigWriter {
 
   async setProject(cwd: string, key: string, value: unknown): Promise<CoreConfig> {
     const configPath = join(this.stateDir.projectRoot(cwd), "config.toml");
-    return this.writeAt(configPath, key, value, () => this.loader.loadGlobal());
+
+    // Base = current project file (partial) ou {} se ausente.
+    const currentProject = (await this.loader.loadProject(cwd)) ?? {};
+    const global = await this.loader.loadGlobal();
+
+    // Coerce string values usando o tipo do valor merged (project + global defaults)
+    // como hint — sem isso, partial vazio nao da hint e port virava string "9999".
+    const fullContext = deepMerge(
+      global as Record<string, unknown>,
+      currentProject as Record<string, unknown>,
+    );
+    const existing = getAtPath(fullContext, key);
+    const coerced = coerceValue(value, existing);
+
+    const updatedPartial = setAtPath(currentProject, key, coerced);
+
+    // Validar: merge com global e checar full schema (catches type errors).
+    const merged = deepMerge(
+      global as Record<string, unknown>,
+      updatedPartial,
+    );
+    const validated = this.validate(merged, configPath);
+
+    // Escrever apenas o partial (preserva sparseness do project file).
+    const tomlContent = this.toml.stringify(updatedPartial);
+    await this.fs.writeFile(configPath, tomlContent, FILE_MODE);
+
+    return validated;
   }
 
   private async writeAt(

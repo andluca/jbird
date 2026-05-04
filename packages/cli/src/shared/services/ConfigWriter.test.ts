@@ -172,4 +172,49 @@ describe("ConfigWriter.setProject", () => {
 
     expect(result.routing.defaultModel).toBe("haiku");
   });
+
+  it("preserves existing project keys when setting a different key", async () => {
+    const initialContent = `[services.proxy]\nport = 9999\n`;
+    const { fs, state } = makeFakeFs({
+      "/my/project/.jbird/config.toml": initialContent,
+    });
+    const toml = await makeRealToml();
+    const writer = makeWriter(fs, toml);
+
+    await writer.setProject("/my/project", "routing.defaultModel", "haiku");
+
+    const written = state.writeCalls[state.writeCalls.length - 1]?.content ?? "";
+    expect(written).toContain("port = 9999");
+    expect(written).toContain('default_model = "haiku"');
+  });
+
+  it("does not write global keys to project file", async () => {
+    const { fs, state } = makeFakeFs();
+    const toml = await makeRealToml();
+    const writer = makeWriter(fs, toml);
+
+    await writer.setProject("/my/project", "services.proxy.port", "9999");
+
+    const projectWrite = state.writeCalls.find((c) => c.path.includes("/my/project/.jbird/config.toml"));
+    const content = projectWrite?.content ?? "";
+    expect(content).toContain("port = 9999");
+    expect(content).not.toContain("autostart");
+    expect(content).not.toContain("[bundle]");
+    expect(content).not.toContain("default_model");
+  });
+
+  it("rejects value that would make merged config invalid", async () => {
+    const { fs, state } = makeFakeFs();
+    const toml = await makeRealToml();
+    const writer = makeWriter(fs, toml);
+
+    let caught: unknown;
+    try {
+      await writer.setProject("/my/project", "services.proxy.port", "99999");
+    } catch (err) {
+      caught = err;
+    }
+    expect(caught).toMatchObject({ details: { kind: "validation-failed" } });
+    expect(state.writeCalls.length).toBe(0);
+  });
 });

@@ -1,5 +1,6 @@
 import type { Command } from "commander";
 import type { Stdout } from "../../shared/services/ports.ts";
+import { STUB_EXIT_CODE } from "../../shared/exit-codes.ts";
 import { runStatsReport } from "./report/report.ts";
 
 interface StatsOptions {
@@ -19,6 +20,6 @@ export function registerStats(program: Command, deps: CommandDeps): void {
     .option("--json", "output as JSON", false)
     .action(async (opts: StatsOptions) => {
       await runStatsReport({ since: opts.since, json: opts.json }, deps);
-      process.exitCode = 2;
+      process.exitCode = STUB_EXIT_CODE;
     });
 }

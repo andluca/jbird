@@ -1,29 +1,10 @@
 import { join } from "node:path";
 import { coreConfigSchema, ConfigError, JBIRD_VERSION } from "@jbird/core";
 import type { CoreConfig } from "@jbird/core";
-import { deepMerge } from "./helpers.ts";
+import { deepMerge, keepOnlyPresentKeys } from "./helpers.ts";
 import type { StateDir } from "./StateDir.ts";
 import type { Fs, Toml } from "./ports.ts";
 import type { Logger } from "@jbird/core";
-
-/**
- * After Zod parses with defaults, keep only the keys that were actually present
- * in the original raw object. This prevents schema-injected defaults from
- * masquerading as explicit project overrides during merge.
- */
-function keepOnlyPresentKeys(parsed: unknown, raw: unknown): unknown {
-  if (raw === null || typeof raw !== "object" || Array.isArray(raw)) return parsed;
-  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return parsed;
-
-  const rawObj = raw as Record<string, unknown>;
-  const parsedObj = parsed as Record<string, unknown>;
-  const result: Record<string, unknown> = {};
-
-  for (const key of Object.keys(rawObj)) {
-    result[key] = keepOnlyPresentKeys(parsedObj[key], rawObj[key]);
-  }
-  return result;
-}
 
 /**
  * Loads and merges jbird configuration from global (~/.jbird/config.toml)

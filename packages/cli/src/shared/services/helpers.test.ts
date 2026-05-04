@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import {
   deepMerge,
   getAtPath,
+  keepOnlyPresentKeys,
   setAtPath,
   toCamelCase,
   toSnakeCase,
@@ -164,5 +165,37 @@ describe("toSnakeCase", () => {
 
   it("handles multiple uppercase letters", () => {
     expect(toSnakeCase("tokenEstimateLt")).toBe("token_estimate_lt");
+  });
+});
+
+// ─── keepOnlyPresentKeys ─────────────────────────────────────────────────────
+
+describe("keepOnlyPresentKeys", () => {
+  it("returns parsed when raw is not an object", () => {
+    expect(keepOnlyPresentKeys({ a: 1 }, "string")).toEqual({ a: 1 });
+    expect(keepOnlyPresentKeys({ a: 1 }, null)).toEqual({ a: 1 });
+    expect(keepOnlyPresentKeys({ a: 1 }, [1, 2])).toEqual({ a: 1 });
+  });
+
+  it("strips parsed keys absent from raw", () => {
+    const parsed = { a: 1, b: 2, c: 3 };
+    const raw = { a: 1 };
+    expect(keepOnlyPresentKeys(parsed, raw)).toEqual({ a: 1 });
+  });
+
+  it("recurses into nested objects", () => {
+    const parsed = { services: { proxy: { autostart: true, port: 7878 } } };
+    const raw = { services: { proxy: { port: 9999 } } };
+    expect(keepOnlyPresentKeys(parsed, raw)).toEqual({ services: { proxy: { port: 7878 } } });
+  });
+
+  it("preserves arrays from parsed without recursing", () => {
+    const parsed = { rules: [{ a: 1 }] };
+    const raw = { rules: [{ a: 1 }] };
+    expect(keepOnlyPresentKeys(parsed, raw)).toEqual({ rules: [{ a: 1 }] });
+  });
+
+  it("returns parsed unchanged when both are non-objects", () => {
+    expect(keepOnlyPresentKeys(42, 42)).toBe(42);
   });
 });

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { ConfigLoader } from "./ConfigLoader.ts";
 import { StateDir } from "./StateDir.ts";
-import { ConfigError, JBIRD_VERSION } from "@jbird/core";
+import { JBIRD_VERSION } from "@jbird/core";
 import type { Fs, Toml } from "./ports.ts";
 import type { Logger } from "@jbird/core";
 
@@ -103,8 +103,10 @@ describe("ConfigLoader.loadGlobal", () => {
     } catch (err) {
       caught = err;
     }
-    expect(caught).toBeInstanceOf(ConfigError);
-    expect(caught).toMatchObject({ details: { kind: "validation-failed" } });
+    expect(caught).toMatchObject({
+      message: "Config validation failed",
+      details: { kind: "validation-failed" },
+    });
   });
 
   it("translates snake_case TOML keys to camelCase config keys", async () => {
@@ -132,7 +134,7 @@ describe("ConfigLoader.loadGlobal", () => {
     } catch (err) {
       caught = err;
     }
-    expect(caught).toBeInstanceOf(ConfigError);
+    expect(caught).toMatchObject({ details: { kind: "validation-failed" } });
   });
 });
 

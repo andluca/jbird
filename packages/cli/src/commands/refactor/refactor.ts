@@ -1,5 +1,6 @@
 import type { Command } from "commander";
 import type { Stdout } from "../../shared/services/ports.ts";
+import { STUB_EXIT_CODE } from "../../shared/exit-codes.ts";
 import { runRefactor } from "./run/run.ts";
 
 interface RefactorOptions {
@@ -20,6 +21,6 @@ export function registerRefactor(program: Command, deps: CommandDeps): void {
     .option("--gates <gates>", "gates to run: test,lint,build", "test,lint,build")
     .action(async (target: string, opts: RefactorOptions) => {
       await runRefactor({ target, scope: opts.scope, gates: opts.gates }, deps);
-      process.exitCode = 2;
+      process.exitCode = STUB_EXIT_CODE;
     });
 }

@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import type { Stdout } from "../../shared/services/ports.ts";
+import { STUB_EXIT_CODE } from "../../shared/exit-codes.ts";
 import { runPluginsSync } from "./sync/sync.ts";
 import { runPluginsList } from "./list/list.ts";
 
@@ -15,7 +16,7 @@ export function registerPlugins(program: Command, deps: CommandDeps): void {
     .description("Sync plugins from the registry.")
     .action(async () => {
       await runPluginsSync({}, deps);
-      process.exitCode = 2;
+      process.exitCode = STUB_EXIT_CODE;
     });
 
   plugins
@@ -23,7 +24,7 @@ export function registerPlugins(program: Command, deps: CommandDeps): void {
     .description("List installed plugins.")
     .action(async () => {
       await runPluginsList({}, deps);
-      process.exitCode = 2;
+      process.exitCode = STUB_EXIT_CODE;
     });
 
   program.addCommand(plugins);

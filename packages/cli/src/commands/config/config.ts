@@ -23,7 +23,7 @@ export function registerConfig(program: Command, deps: CommandDeps): void {
     .description("Get a configuration value.")
     .argument("<key>", "dot-notation config key (e.g. services.proxy.port)")
     .action(async (key: string) => {
-      await runConfigGet({ key }, deps);
+      await runConfigGet({ key, cwd: process.cwd() }, deps);
     });
 
   config
@@ -33,7 +33,7 @@ export function registerConfig(program: Command, deps: CommandDeps): void {
     .argument("<value>", "value to set")
     .option("-g, --global", "write to global config instead of project config")
     .action(async (key: string, value: string, cmdOpts: { global?: boolean }) => {
-      await runConfigSet({ key, value, global: cmdOpts.global ?? false }, deps);
+      await runConfigSet({ key, value, global: cmdOpts.global ?? false, cwd: process.cwd() }, deps);
     });
 
   config
@@ -41,7 +41,7 @@ export function registerConfig(program: Command, deps: CommandDeps): void {
     .description("Open the configuration file in $VISUAL / $EDITOR / vi.")
     .option("-g, --global", "edit global config instead of project config")
     .action(async (cmdOpts: { global?: boolean }) => {
-      await runConfigEdit({ global: cmdOpts.global ?? true }, deps);
+      await runConfigEdit({ global: cmdOpts.global ?? true, cwd: process.cwd() }, deps);
     });
 
   program.addCommand(config);

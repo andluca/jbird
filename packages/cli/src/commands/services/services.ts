@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import type { Stdout } from "../../shared/services/ports.ts";
+import { STUB_EXIT_CODE } from "../../shared/exit-codes.ts";
 import { runServicesStart } from "./start/start.ts";
 import { runServicesStop } from "./stop/stop.ts";
 import { runServicesStatus } from "./status/status.ts";
@@ -18,7 +19,7 @@ export function registerServices(program: Command, deps: CommandDeps): void {
     .description("Start the jbird proxy service.")
     .action(async () => {
       await runServicesStart({}, deps);
-      process.exitCode = 2;
+      process.exitCode = STUB_EXIT_CODE;
     });
 
   services
@@ -26,7 +27,7 @@ export function registerServices(program: Command, deps: CommandDeps): void {
     .description("Stop the jbird proxy service.")
     .action(async () => {
       await runServicesStop({}, deps);
-      process.exitCode = 2;
+      process.exitCode = STUB_EXIT_CODE;
     });
 
   services
@@ -34,7 +35,7 @@ export function registerServices(program: Command, deps: CommandDeps): void {
     .description("Show status of jbird side services.")
     .action(async () => {
       await runServicesStatus({}, deps);
-      process.exitCode = 2;
+      process.exitCode = STUB_EXIT_CODE;
     });
 
   services
@@ -42,7 +43,7 @@ export function registerServices(program: Command, deps: CommandDeps): void {
     .description("Install jbird as a system service.")
     .action(async () => {
       await runServicesInstall({}, deps);
-      process.exitCode = 2;
+      process.exitCode = STUB_EXIT_CODE;
     });
 
   services
@@ -50,7 +51,7 @@ export function registerServices(program: Command, deps: CommandDeps): void {
     .description("Stream logs from the jbird proxy service.")
     .action(async () => {
       await runServicesLogs({}, deps);
-      process.exitCode = 2;
+      process.exitCode = STUB_EXIT_CODE;
     });
 
   program.addCommand(services);

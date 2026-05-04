@@ -1,5 +1,6 @@
 import type { Command } from "commander";
 import type { Stdout } from "../../shared/services/ports.ts";
+import { STUB_EXIT_CODE } from "../../shared/exit-codes.ts";
 import { runTdd } from "./run/run.ts";
 
 interface TddOptions {
@@ -25,6 +26,6 @@ export function registerTdd(program: Command, deps: CommandDeps): void {
         { work, mode: opts.mode, stack: opts.stack, maxIterations: parseInt(opts.maxIterations, 10) },
         deps,
       );
-      process.exitCode = 2;
+      process.exitCode = STUB_EXIT_CODE;
     });
 }

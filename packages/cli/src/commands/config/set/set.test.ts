@@ -71,7 +71,7 @@ describe("runConfigSet", () => {
     const { writer, calls } = makeWriter();
     const stateDir = makeStateDir();
 
-    await runConfigSet({ key: "services.proxy.port", value: "9999", global: true }, { stdout, configWriter: writer, stateDir });
+    await runConfigSet({ key: "services.proxy.port", value: "9999", global: true, cwd: "/test/project" }, { stdout, configWriter: writer, stateDir });
 
     expect(calls.some((c) => c.startsWith("global:"))).toBe(true);
   });
@@ -81,7 +81,7 @@ describe("runConfigSet", () => {
     const { writer, calls } = makeWriter();
     const stateDir = makeStateDir();
 
-    await runConfigSet({ key: "services.proxy.port", value: "9999", global: false }, { stdout, configWriter: writer, stateDir });
+    await runConfigSet({ key: "services.proxy.port", value: "9999", global: false, cwd: "/test/project" }, { stdout, configWriter: writer, stateDir });
 
     expect(calls.some((c) => c.startsWith("project:"))).toBe(true);
   });
@@ -91,7 +91,7 @@ describe("runConfigSet", () => {
     const { writer } = makeWriter();
     const stateDir = makeStateDir();
 
-    await runConfigSet({ key: "services.proxy.port", value: "9999", global: true }, { stdout, configWriter: writer, stateDir });
+    await runConfigSet({ key: "services.proxy.port", value: "9999", global: true, cwd: "/test/project" }, { stdout, configWriter: writer, stateDir });
 
     expect(lines.join("")).toContain("services.proxy.port");
   });
@@ -106,7 +106,7 @@ describe("runConfigSet", () => {
     const { restore } = captureStderr();
 
     try {
-      await runConfigSet({ key: "services.proxy.port", value: "-1", global: true }, { stdout, configWriter: failingWriter, stateDir });
+      await runConfigSet({ key: "services.proxy.port", value: "-1", global: true, cwd: "/test/project" }, { stdout, configWriter: failingWriter, stateDir });
     } finally {
       restore();
     }
@@ -124,7 +124,7 @@ describe("runConfigSet", () => {
     const { messages, restore } = captureStderr();
 
     try {
-      await runConfigSet({ key: "services.proxy.port", value: "bad", global: true }, { stdout, configWriter: failingWriter, stateDir });
+      await runConfigSet({ key: "services.proxy.port", value: "bad", global: true, cwd: "/test/project" }, { stdout, configWriter: failingWriter, stateDir });
     } finally {
       restore();
     }

@@ -65,7 +65,11 @@ export function setAtPath(
   };
 }
 
-function coerceValue(value: unknown, existing: unknown): unknown {
+/**
+ * Coerces a string value to number or boolean when `existing` provides the type hint.
+ * Returns the value unchanged when existing is not a typed primitive or value is not a string.
+ */
+export function coerceValue(value: unknown, existing: unknown): unknown {
   if (typeof value !== "string") return value;
   if (typeof existing === "number") {
     const n = Number(value);
@@ -111,4 +115,25 @@ export function deepMerge<T extends Record<string, unknown>>(
 
 function isPlainObject(val: unknown): val is Record<string, unknown> {
   return val !== null && typeof val === "object" && !Array.isArray(val);
+}
+
+// ─── Config loader helpers ───────────────────────────────────────────────────
+
+/**
+ * After Zod parses with defaults, keep only the keys that were actually present
+ * in the original raw object. Prevents schema-injected defaults from
+ * masquerading as explicit project overrides during merge.
+ */
+export function keepOnlyPresentKeys(parsed: unknown, raw: unknown): unknown {
+  if (raw === null || typeof raw !== "object" || Array.isArray(raw)) return parsed;
+  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return parsed;
+
+  const rawObj = raw as Record<string, unknown>;
+  const parsedObj = parsed as Record<string, unknown>;
+  const result: Record<string, unknown> = {};
+
+  for (const key of Object.keys(rawObj)) {
+    result[key] = keepOnlyPresentKeys(parsedObj[key], rawObj[key]);
+  }
+  return result;
 }

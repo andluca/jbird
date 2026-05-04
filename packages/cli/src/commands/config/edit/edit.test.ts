@@ -75,7 +75,7 @@ describe("runConfigEdit", () => {
     const stateDir = makeStateDir("/home/user/.jbird/config.toml");
     const loader = makeLoader();
 
-    await runConfigEdit({ global: true }, { stdout, editor, stateDir, configLoader: loader });
+    await runConfigEdit({ global: true, cwd: "/test/project" }, { stdout, editor, stateDir, configLoader: loader });
 
     expect(openedPaths).toContain("/home/user/.jbird/config.toml");
   });
@@ -86,7 +86,7 @@ describe("runConfigEdit", () => {
     const stateDir = makeStateDir();
     const loader = makeLoader();
 
-    await runConfigEdit({ global: true }, { stdout, editor, stateDir, configLoader: loader });
+    await runConfigEdit({ global: true, cwd: "/test/project" }, { stdout, editor, stateDir, configLoader: loader });
 
     expect(lines.join("")).toContain("config saved");
   });
@@ -99,7 +99,7 @@ describe("runConfigEdit", () => {
     const { restore } = captureStderr();
 
     try {
-      await runConfigEdit({ global: true }, { stdout, editor, stateDir, configLoader: loader });
+      await runConfigEdit({ global: true, cwd: "/test/project" }, { stdout, editor, stateDir, configLoader: loader });
     } finally {
       restore();
     }
@@ -120,7 +120,7 @@ describe("runConfigEdit", () => {
     const { restore } = captureStderr();
 
     try {
-      await runConfigEdit({ global: true }, { stdout, editor, stateDir, configLoader: failLoader });
+      await runConfigEdit({ global: true, cwd: "/test/project" }, { stdout, editor, stateDir, configLoader: failLoader });
     } finally {
       restore();
     }

@@ -7,6 +7,7 @@ export interface ConfigSetOptions {
   readonly key: string;
   readonly value: string;
   readonly global?: boolean;
+  readonly cwd: string;
 }
 
 export interface ConfigSetDeps {
@@ -21,9 +22,8 @@ export async function runConfigSet(opts: ConfigSetOptions, deps: ConfigSetDeps):
       await deps.stateDir.ensureGlobal();
       await deps.configWriter.setGlobal(opts.key, opts.value);
     } else {
-      const cwd = process.cwd();
-      await deps.stateDir.ensureProject(cwd);
-      await deps.configWriter.setProject(cwd, opts.key, opts.value);
+      await deps.stateDir.ensureProject(opts.cwd);
+      await deps.configWriter.setProject(opts.cwd, opts.key, opts.value);
     }
     deps.stdout.write(`set ${opts.key} = ${opts.value}`);
   } catch (err) {

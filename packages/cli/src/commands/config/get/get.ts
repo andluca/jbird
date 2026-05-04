@@ -7,6 +7,7 @@ import type { CoreConfig } from "@jbird/core";
 
 export interface ConfigGetOptions {
   readonly key: string;
+  readonly cwd: string;
 }
 
 export interface ConfigGetDeps {
@@ -29,7 +30,7 @@ export async function runConfigGet(opts: ConfigGetOptions, deps: ConfigGetDeps):
   let config: CoreConfig;
   try {
     await deps.stateDir.ensureGlobal();
-    config = await deps.configLoader.load(process.cwd());
+    config = await deps.configLoader.load(opts.cwd);
   } catch (err) {
     const message = err instanceof ConfigError ? err.message : "Failed to load config";
     process.stderr.write(`${message}\n`);
